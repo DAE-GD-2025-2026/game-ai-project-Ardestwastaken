@@ -52,7 +52,11 @@ public:
 	// Sets default values for this character's properties
 	ASteeringAgent();
 
+	float GetOriginalMaxLinearVelocity() const { return OriginalMaxLinearVelocity; };
+
 protected:
+
+	float OriginalMaxLinearVelocity;
 
 	ISteeringBehavior* SteeringBehavior{nullptr}; // non-owning
 	

@@ -1,19 +1,23 @@
 ﻿// Fill out your copyright notice in the Description page of Project Settings.
 
 #include "SteeringAgent.h"
-
+#include "AIController.h"
 
 // Sets default values
 ASteeringAgent::ASteeringAgent()
 {
 	// Set this character to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
+	OriginalMaxLinearVelocity = GetMaxLinearSpeed();
+	SetIsAutoOrienting(false);
 }
 
 // Called when the game starts or when spawned
 void ASteeringAgent::BeginPlay()
 {
 	Super::BeginPlay();
+	OriginalMaxLinearVelocity = GetMaxLinearSpeed();
+	SetIsAutoOrienting(false);
 }
 
 void ASteeringAgent::BeginDestroy()
@@ -29,9 +33,29 @@ void ASteeringAgent::Tick(float DeltaTime)
 	if (SteeringBehavior)
 	{
 		SteeringOutput output = SteeringBehavior->CalculateSteering(DeltaTime, *this);
-		AddMovementInput(FVector{output.LinearVelocity, 0.f});
 
-		//TODO: Implement angular Velocity
+		if (output.IsValid)
+		{
+			AddMovementInput(FVector{ output.LinearVelocity, 0.f });
+
+			if (!IsAutoOrienting())
+			{
+				if (AAIController* AIController = Cast<AAIController>(GetController()))
+				{
+					float const DeltaYaw = FMath::Clamp(output.AngularVelocity, -1.0f, 1.0f) * GetMaxAngularSpeed() * DeltaTime;
+
+					FRotator const currentRotation(GetActorForwardVector().ToOrientationRotator());
+					FRotator const deltaRotation(0, DeltaYaw, 0);
+					FRotator const desiredRotation(currentRotation + deltaRotation);
+
+					if (!FMath::IsNearlyEqual(currentRotation.Yaw, desiredRotation.Yaw))
+					{
+						AIController->SetControlRotation(desiredRotation);
+						FaceRotation(desiredRotation);
+					}
+				}
+			}
+		}
 	}
 }
 

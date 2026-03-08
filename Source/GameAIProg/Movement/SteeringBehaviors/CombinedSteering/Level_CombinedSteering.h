@@ -15,22 +15,27 @@ class GAMEAIPROG_API ALevel_CombinedSteering : public ALevel_Base
 	GENERATED_BODY()
 
 public:
-	// Sets default values for this actor's properties
 	ALevel_CombinedSteering();
-
-	// Called every frame
 	virtual void Tick(float DeltaTime) override;
 
 protected:
-	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
-
 	virtual void BeginDestroy() override;
 
 private:
-	//Datamembers
-	bool UseMouseTarget = false;
-	bool CanDebugRender = false;
+	UPROPERTY()
+	ASteeringAgent* WandererAgent{ nullptr };
+	Wander* pWander_Threat{ nullptr };
 
-	
+	UPROPERTY()
+	ASteeringAgent* SeekerAgent{ nullptr };
+	See
+	UPROPERTY()
+	ASteeringAgent* EvaderAgent{ nullptr };
+	Evade* pEvade{ nullptr };
+	Wander* pWander_Evader{ nullptr };
+	PrioritySteering* pPrioritySteering{ nullptr };
+
+	bool  CanDebugRender{ false };
+	float EvadeRadius{ 300.f };
 };

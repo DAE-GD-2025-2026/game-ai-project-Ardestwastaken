@@ -1,32 +1,52 @@
-
 #include "CombinedSteeringBehaviors.h"
 #include <algorithm>
 #include "../SteeringAgent.h"
 
 BlendedSteering::BlendedSteering(const std::vector<WeightedBehavior>& WeightedBehaviors)
-	:WeightedBehaviors(WeightedBehaviors)
-{};
+	: WeightedBehaviors(WeightedBehaviors)
+{
+};
 
-//****************
-//BLENDED STEERING
 SteeringOutput BlendedSteering::CalculateSteering(float DeltaT, ASteeringAgent& Agent)
 {
-	SteeringOutput BlendedSteering = {};
-	//TODO: Calculate the weighted average steeringbehavior
+	SteeringOutput BlendedOutput = {};
+	float TotalWeight = 0.f;
 
-	if (Agent.GetDebugRenderingEnabled())
-		DrawDebugDirectionalArrow(
-			Agent.GetWorld(),
-			Agent.GetActorLocation(),
-			Agent.GetActorLocation() + FVector{BlendedSteering.LinearVelocity, 0} * (Agent.GetMaxLinearSpeed() * DeltaT),
-			30.f, FColor::Red
-			);
+	for (WeightedBehavior& wb : WeightedBehaviors)
+	{
+		if (wb.pBehavior && wb.Weight > 0.f)
+		{
+			SteeringOutput BehaviorOutput = wb.pBehavior->CalculateSteering(DeltaT, Agent);
+			BlendedOutput.LinearVelocity += BehaviorOutput.LinearVelocity * wb.Weight;
+			BlendedOutput.AngularVelocity += BehaviorOutput.AngularVelocity * wb.Weight;
+			TotalWeight += wb.Weight;
+		}
+	}
 
-	return BlendedSteering;
+	if (TotalWeight > 0.f)
+	{
+		BlendedOutput.LinearVelocity /= TotalWeight;
+		BlendedOutput.AngularVelocity /= TotalWeight;
+	}
+
+	BlendedOutput.IsValid = true;
+	return BlendedOutput;
 }
 
-//*****************
-//PRIORITY STEERING
+float* BlendedSteering::GetWeight(ISteeringBehavior* const SteeringBehavior)
+{
+	auto it = find_if(WeightedBehaviors.begin(), WeightedBehaviors.end(),
+		[SteeringBehavior](const WeightedBehavior& Elem)
+		{
+			return Elem.pBehavior == SteeringBehavior;
+		});
+
+	if (it != WeightedBehaviors.end())
+		return &it->Weight;
+
+	return nullptr;
+}
+
 SteeringOutput PrioritySteering::CalculateSteering(float DeltaT, ASteeringAgent& Agent)
 {
 	SteeringOutput Steering = {};
@@ -39,6 +59,5 @@ SteeringOutput PrioritySteering::CalculateSteering(float DeltaT, ASteeringAgent&
 			break;
 	}
 
-	//If non of the behavior return a valid output, last behavior is returned
 	return Steering;
 }
