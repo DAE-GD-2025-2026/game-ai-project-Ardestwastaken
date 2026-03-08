@@ -25,6 +25,7 @@ SteeringOutput BlendedSteering::CalculateSteering(float DeltaT, ASteeringAgent& 
 
 	if (TotalWeight > 0.f)
 	{
+
 		BlendedOutput.LinearVelocity /= TotalWeight;
 		BlendedOutput.AngularVelocity /= TotalWeight;
 	}
